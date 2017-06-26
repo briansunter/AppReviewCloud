@@ -28,9 +28,18 @@ const reviewEpic = (action$, store) =>
            .map(x => x.content.label)
            .flatMap(x => x.split(" "))
            .map(x => x.toLowerCase())
-           .map (x => ({text: x, value: 1000 * Math.random()}))
-.take(1000)
-.toArray()
+           .map(x => x.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,""))
+           .take(2000)
+           .reduce((map, word) =>
+               Object.assign(map, {
+                   [word]: (map[word])
+                   ? map[word] + 1
+                   : 1,
+               }),{})
+           .flatMap (x => Object.entries(x))
+.filter (x => x[1] > 1)
+           .map(x => ({text:x[0], value: x[1] * 100 }))
+           .toArray()
            .map(x=> ({type: LOADED_APP_REVIEWS,
                       reviews: x}))
 
@@ -70,9 +79,9 @@ let App = ({ getReviews, ping, reviews}) => (
         <p> {reviews.length } </p>
         <button onClick={ping}>Start PING</button>
         <button onClick={() => getReviews(722217471)}>Start Reviews</button>
-            <WordCloud
-                height={window.screen.availHeight}
-                width={window.screen.availWidth}
+        <WordCloud
+            height={window.screen.availHeight}
+            width={window.screen.availWidth}
             data={reviews}
             fontSizeMapper={fontSizeMapper}
             rotate={rotate}/>
