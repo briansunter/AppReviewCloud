@@ -10,7 +10,23 @@ import { connect } from 'react-redux';
 import axios from 'axios';
 import Promise from 'bluebird';
 
-function fetchItunesReviewPage(appId,page) {
+var words = [
+    'about', 'after', 'all', 'also', 'am', 'an', 'and', 'another', 'any', 'are', 'as', 'at', 'be',
+    'because', 'been', 'before', 'being', 'between', 'both', 'but', 'by', 'came', 'can',
+    'come', 'could', 'did', 'do', 'each', 'for', 'from', 'get', 'got', 'has', 'had',
+    'he', 'have', 'her', 'here', 'him', 'himself', 'his', 'how', 'if', 'in', 'into',
+    'is', 'it', 'like', 'make', 'many', 'me', 'might', 'more', 'most', 'much', 'must',
+    'my', 'never', 'now', 'of', 'on', 'only', 'or', 'other', 'our', 'out', 'over',
+    'said', 'same', 'see', 'should', 'since', 'some', 'still', 'such', 'take', 'than',
+    'that', 'the', 'their', 'them', 'then', 'there', 'these', 'they', 'this', 'those',
+    'through', 'to', 'too', 'under', 'up', 'very', 'was', 'way', 'we', 'well', 'were',
+    'what', 'where', 'which', 'while', 'who', 'with', 'would', 'you', 'your', 'a', 'i', "it's", "i'm"]
+
+function isStopWord(word) {
+    return words.includes(word);
+}
+
+function fetchItunesReviewPage(appId, page) {
     return Observable.fromPromise(axios.get("https://itunes.apple.com/us/rss/customerreviews/id=" + appId  + "/sortBy=mostRecent/page="  + page + "/json"));
 };
 
@@ -21,15 +37,17 @@ const getReviews = (appId) => ({ type: LOAD_APP_REVIEWS, appId: appId });
 
 const reviewEpic = (action$, store) =>
     action$.ofType(LOAD_APP_REVIEWS)
-           .flatMap(x => fetchItunesReviewPage(x.appId, store.getState().page))
+           .flatMap(x => Observable.range(1,10).flatMap(y => Observable.from(fetchItunesReviewPage(x.appId, y))))
+           .take(10)
            .flatMap(x => x.data.feed.entry)
+           .defaultIfEmpty([])
            .filter(x => x.content)
            .filter(x => x.content.label)
            .map(x => x.content.label)
            .flatMap(x => x.split(" "))
            .map(x => x.toLowerCase())
            .map(x => x.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,""))
-           .take(2000)
+           .filter(x => isStopWord(x) == false)
            .reduce((map, word) =>
                Object.assign(map, {
                    [word]: (map[word])
@@ -37,26 +55,23 @@ const reviewEpic = (action$, store) =>
                    : 1,
                }),{})
            .flatMap (x => Object.entries(x))
-.filter (x => x[1] > 1)
-           .map(x => ({text:x[0], value: x[1] * 100 }))
+           .filter (x => x[1] > 2)
+           .map(x => ({text:x[0], value: x[1] * 25 }))
            .toArray()
            .map(x=> ({type: LOADED_APP_REVIEWS,
                       reviews: x}))
 
 const defaultState = {
-    isPinging: false,
-    reviews: [],
-    page: 1,
+    reviews: []
 };
 
-const pingReducer = (state = defaultState, action) => {
+const reviewReducer = (state = defaultState, action) => {
     switch (action.type) {
+        case LOAD_APP_REVIEWS:
+            return {reviews: []};
 
         case LOADED_APP_REVIEWS:
-            return {reviews: state.reviews.concat(action.reviews),
-                    isPinging: false,
-                    page: state.page + 1
-            };
+            return {reviews: action.reviews};
 
         default:
             return state;
@@ -65,7 +80,7 @@ const pingReducer = (state = defaultState, action) => {
 
 const epicMiddleware = createEpicMiddleware(reviewEpic);
 
-const store = createStore(pingReducer,
+const store = createStore(reviewReducer,
                           applyMiddleware(epicMiddleware)
 );
 
@@ -73,18 +88,50 @@ const fontSizeMapper = word => word.value / 20;
 const rotate = word => (word.value % 90) - 45;
 
 // index.js
+class AppReviewCloud extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {appId: '284882215'};
 
-let App = ({ getReviews, ping, reviews}) => (
-    <div key={reviews.length}>
-        <p> {reviews.length } </p>
-        <button onClick={ping}>Start PING</button>
-        <button onClick={() => getReviews(722217471)}>Start Reviews</button>
-        <WordCloud
+        this.handleChange = this.handleChange.bind(this);
+        this.handleSubmit = this.handleSubmit.bind(this);
+    }
+
+    handleChange(event) {
+        this.setState({appId: event.target.value});
+    }
+
+    handleSubmit(event) {
+        this.props.getReviews(this.state.appId)
+        event.preventDefault();
+    }
+
+    render() {
+        return (
+            <div>
+            <form onSubmit={this.handleSubmit}>
+            <label>
+            iTunes App Id:
+                           <input type="text" value={this.state.appId} onChange={this.handleChange} />
+            </label>
+            <input type="submit" value="Create Review Cloud" />
+            </form>
+            <WordCloud
             height={window.screen.availHeight}
             width={window.screen.availWidth}
-            data={reviews}
+            data={this.props.reviews}
             fontSizeMapper={fontSizeMapper}
-            rotate={rotate}/>
+            rotate={rotate}
+            padding={6}/>
+            </div>
+        );
+    }
+}
+
+let App = ({ getReviews, reviews}) => (
+    <div key={reviews.length}>
+        <p> {reviews.length} </p>
+        <AppReviewCloud getReviews={getReviews} reviews={reviews} />
     </div>
 );
 
