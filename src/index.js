@@ -37,8 +37,7 @@ const getReviews = (appId) => ({ type: LOAD_APP_REVIEWS, appId: appId });
 
 const reviewEpic = (action$, store) =>
     action$.ofType(LOAD_APP_REVIEWS)
-           .flatMap(x => Observable.range(1,10).flatMap(y => Observable.from(fetchItunesReviewPage(x.appId, y))))
-           .take(10)
+           .flatMap(x => Observable.range(1,10).flatMap(y => fetchItunesReviewPage(x.appId, y)))
            .flatMap(x => x.data.feed.entry)
            .defaultIfEmpty([])
            .filter(x => x.content)
@@ -48,30 +47,32 @@ const reviewEpic = (action$, store) =>
            .map(x => x.toLowerCase())
            .map(x => x.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,""))
            .filter(x => isStopWord(x) == false)
-           .reduce((map, word) =>
+           .scan((map, word) =>
                Object.assign(map, {
                    [word]: (map[word])
                    ? map[word] + 1
                    : 1,
                }),{})
            .flatMap (x => Object.entries(x))
-           .filter (x => x[1] > 2)
-           .map(x => ({text:x[0], value: x[1] * 25 }))
-           .toArray()
+           .filter (x => x[1] > 0)
+           .map(x => ({text:x[0], value: x[1] * 250 }))
+.bufferCount(100)
            .map(x=> ({type: LOADED_APP_REVIEWS,
-                      reviews: x}))
+                      reviews: x})).take(2)
 
 const defaultState = {
     reviews: []
 };
 
 const reviewReducer = (state = defaultState, action) => {
+    console.log(action);
     switch (action.type) {
         case LOAD_APP_REVIEWS:
             return {reviews: []};
 
         case LOADED_APP_REVIEWS:
-            return {reviews: action.reviews};
+            let newReviews =  state.reviews.concat(action.reviews)
+            return {reviews:newReviews};
 
         default:
             return state;
