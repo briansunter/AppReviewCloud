@@ -4,7 +4,7 @@ import WordCloud from 'react-d3-cloud';
 import {flatMap, ofType, delay, MapTo, subscribe,repeat, map} from 'rxjs'
 import { Observable } from 'rxjs/Observable';
 import { Provider } from 'react-redux';
-import { createStore, applyMiddleware } from 'redux';
+import { compose, createStore, applyMiddleware } from 'redux';
 import { createEpicMiddleware, combineEpics } from 'redux-observable';
 import { connect } from 'react-redux';
 import axios from 'axios';
@@ -30,43 +30,31 @@ function fetchItunesReviewPage(appId, page) {
     return Observable.fromPromise(axios.get("https://itunes.apple.com/us/rss/customerreviews/id=" + appId  + "/sortBy=mostRecent/page="  + page + "/json"));
 };
 
+const RESET = 'RESET';
 const LOADED_APP_REVIEWS = 'LOADED_APP_REVIEWS';
 const LOAD_APP_REVIEWS = 'LOAD_APP_REVIEWS';
 
 const getReviews = (appId) => ({ type: LOAD_APP_REVIEWS, appId: appId });
+const reset = () => ({ type:RESET});
 
 const reviewEpic = (action$, store) =>
     action$.ofType(LOAD_APP_REVIEWS)
-           .flatMap(x => Observable.range(1,10).flatMap(y => fetchItunesReviewPage(x.appId, y)))
+           .flatMap(x => Observable.range(1,10).flatMap(y => Observable.defer(() => fetchItunesReviewPage(x.appId, y))))
            .flatMap(x => x.data.feed.entry)
-           .defaultIfEmpty([])
            .filter(x => x.content)
-           .filter(x => x.content.label)
-           .map(x => x.content.label)
-           .flatMap(x => x.split(" "))
-           .map(x => x.toLowerCase())
-           .map(x => x.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,""))
-           .filter(x => isStopWord(x) == false)
-           .scan((map, word) =>
-               Object.assign(map, {
-                   [word]: (map[word])
-                   ? map[word] + 1
-                   : 1,
-               }),{})
-           .flatMap (x => Object.entries(x))
-           .filter (x => x[1] > 0)
-           .map(x => ({text:x[0], value: x[1] * 250 }))
-.bufferCount(100)
+           .bufferCount(10)
            .map(x=> ({type: LOADED_APP_REVIEWS,
-                      reviews: x})).take(2)
+                      reviews: x}))
 
 const defaultState = {
     reviews: []
 };
 
 const reviewReducer = (state = defaultState, action) => {
-    console.log(action);
     switch (action.type) {
+        case RESET:
+            return {reviews: []};
+
         case LOAD_APP_REVIEWS:
             return {reviews: []};
 
@@ -80,10 +68,34 @@ const reviewReducer = (state = defaultState, action) => {
 };
 
 const epicMiddleware = createEpicMiddleware(reviewEpic);
+const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
 
 const store = createStore(reviewReducer,
-                          applyMiddleware(epicMiddleware)
+                          composeEnhancers(applyMiddleware(epicMiddleware))
 );
+
+Array.prototype.flatMap = function(lambda) {
+    return Array.prototype.concat.apply([], this.map(lambda));
+};
+
+function reviewToD3WordCloud(review) {
+    return {text: "foo", value: 1000};
+}
+
+/* review.content.label
+ *              .toLowerCase()
+ *              .split(" ")
+ *              .map(x => x.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,""))
+ *              .filter(x => isStopWord(x) == false)
+ *              .reduce((map, word) =>
+ *                  Object.assign(map, {
+ *                      [word]: (map[word])
+ *                      ? map[word] + 1
+ *                      : 1,
+ *                  }),{})
+ *              .flatMap (x => Object.entries(x))
+ *              .filter (x => x[1] > 0)
+ *              .map(x => ({text: x[0], value: x[1]}))}*/
 
 const fontSizeMapper = word => word.value / 20;
 const rotate = word => (word.value % 90) - 45;
@@ -108,15 +120,21 @@ class AppReviewCloud extends React.Component {
     }
 
     render() {
+        let cloudReviews = [{text: "foo", value: 1000}]
         return (
             <div>
             <form onSubmit={this.handleSubmit}>
             <label>
             iTunes App Id:
-                           <input type="text" value={this.state.appId} onChange={this.handleChange} />
+            <input type="text" value={this.state.appId} onChange={this.handleChange} />
             </label>
             <input type="submit" value="Create Review Cloud" />
             </form>
+            <form onSubmit={reset}>
+            <input type="submit" value="Reset" />
+            </form>
+            <div
+            key={this.props.reviews.length}>
             <WordCloud
             height={window.screen.availHeight}
             width={window.screen.availWidth}
@@ -125,20 +143,23 @@ class AppReviewCloud extends React.Component {
             rotate={rotate}
             padding={6}/>
             </div>
+            </div>
         );
     }
 }
 
-let App = ({ getReviews, reviews}) => (
-    <div key={reviews.length}>
+let App = ({ getReviews, reviews,reset }) => (
+    <div>
         <p> {reviews.length} </p>
         <AppReviewCloud getReviews={getReviews} reviews={reviews} />
     </div>
 );
 
+
+
 App = connect(
-    ({ reviews }) => ({ reviews }),
-    { getReviews }
+    (state) => ({reviews: state.reviews.map(x => ({text: "hello", value: 1000}))}),
+    { getReviews, reset }
 )(App);
 
 ReactDOM.render(
