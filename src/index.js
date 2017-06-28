@@ -40,10 +40,11 @@ const reset = () => ({ type:RESET});
 
 const reviewEpic = (action$, store) =>
     action$.ofType(LOAD_APP_REVIEWS)
-           .mergeMap(x => Observable.range(1,10).flatMap(y => Observable.defer(() => fetchItunesReviewPage(x.appId, y))))
+           .mergeMap(x => Observable.range(1,10).flatMap(y => fetchItunesReviewPage(x.appId, y)))
+           .take(10)
            .flatMap(x => x.data.feed.entry)
            .filter(x => x.content)
-.bufferCount(100)
+           .toArray()
            .map(x=> ({type: LOADED_APP_REVIEWS,
                       reviews: x}))
 
@@ -79,24 +80,23 @@ Array.prototype.flatMap = function(lambda) {
     return Array.prototype.concat.apply([], this.map(lambda));
 };
 
-function reviewToD3WordCloud(review) {
-    return {text: "foo", value: 1000};
+function count(arr){
+  return arr.reduce(function(m,e){
+    m[e] = (+m[e]||0)+1; return m
+  },{});
 }
+function reviewsToD3WordCloud(reviews) {
+    let cleanWords = reviews.flatMap(y=>
+        y.content.label
+         .toLowerCase()
+         .split(" ")
+         .map(x => x.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,""))
+         .filter(x => isStopWord(x) == false));
 
-/* review.content.label
- *              .toLowerCase()
- *              .split(" ")
- *              .map(x => x.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,""))
- *              .filter(x => isStopWord(x) == false)
- *              .reduce((map, word) =>
- *                  Object.assign(map, {
- *                      [word]: (map[word])
- *                      ? map[word] + 1
- *                      : 1,
- *                  }),{})
- *              .flatMap (x => Object.entries(x))
- *              .filter (x => x[1] > 0)
- *              .map(x => ({text: x[0], value: x[1]}))}*/
+    return Object.entries(count(cleanWords))
+                 .filter (x => x[1] > 4)
+                 .map(x => ({text: x[0], value: x[1] * 100})).slice(1,300)
+}
 
 const fontSizeMapper = word => word.value / 20;
 const rotate = word => (word.value % 90) - 45;
@@ -121,13 +121,12 @@ class AppReviewCloud extends React.Component {
     }
 
     render() {
-        let cloudReviews = [{text: "foo", value: 1000}]
         return (
             <div>
             <form onSubmit={this.handleSubmit}>
             <label>
             iTunes App Id:
-            <input type="text" value={this.state.appId} onChange={this.handleChange} />
+                           <input type="text" value={this.state.appId} onChange={this.handleChange} />
             </label>
             <input type="submit" value="Create Review Cloud" />
             </form>
@@ -159,7 +158,7 @@ let App = ({ getReviews, reviews,reset }) => (
 
 
 App = connect(
-    (state) => ({reviews: state.reviews.map(x => ({text: "hello", value: 1000}))}),
+    (state) => ({reviews: reviewsToD3WordCloud(state.reviews)}),
     { getReviews, reset }
 )(App);
 
