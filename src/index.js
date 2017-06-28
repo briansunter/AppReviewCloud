@@ -30,6 +30,7 @@ function fetchItunesReviewPage(appId, page) {
     return Observable.fromPromise(axios.get("https://itunes.apple.com/us/rss/customerreviews/id=" + appId  + "/sortBy=mostRecent/page="  + page + "/json"));
 };
 
+
 const RESET = 'RESET';
 const LOADED_APP_REVIEWS = 'LOADED_APP_REVIEWS';
 const LOAD_APP_REVIEWS = 'LOAD_APP_REVIEWS';
@@ -39,10 +40,10 @@ const reset = () => ({ type:RESET});
 
 const reviewEpic = (action$, store) =>
     action$.ofType(LOAD_APP_REVIEWS)
-           .flatMap(x => Observable.range(1,10).flatMap(y => Observable.defer(() => fetchItunesReviewPage(x.appId, y))))
+           .mergeMap(x => Observable.range(1,10).flatMap(y => Observable.defer(() => fetchItunesReviewPage(x.appId, y))))
            .flatMap(x => x.data.feed.entry)
            .filter(x => x.content)
-           .bufferCount(10)
+.bufferCount(100)
            .map(x=> ({type: LOADED_APP_REVIEWS,
                       reviews: x}))
 
