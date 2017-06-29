@@ -26,11 +26,13 @@ module.exports = {
     new webpack.optimize.OccurrenceOrderPlugin(),
     new webpack.DefinePlugin({
       __DEV__: false,
+       minimize: false,
       'process.env': {
         NODE_ENV: JSON.stringify('production'),
       },
     }),
     new webpack.optimize.UglifyJsPlugin({
+      minimize: false,
       compressor: {
         screw_ie8: true,
         warnings: false,
