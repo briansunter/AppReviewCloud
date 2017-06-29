@@ -1,11 +1,10 @@
 import axios from 'axios';
 import { Observable } from 'rxjs/Observable';
-import {flatMap, ofType, take, filter, toArray , map} from 'rxjs';
+import {ofType, take, filter, toArray , map} from 'rxjs';
 import {LOAD_APP_REVIEWS, LOADED_APP_REVIEWS} from './state';
+import {flatMap} from './utils';
 
-Array.prototype.flatMap = function(lambda) {
-    return Array.prototype.concat.apply([], this.map(lambda));
-};
+Array.prototype.flatMap = flatMap;
 
 function fetchItunesReviewPage(appId, page) {
     return axios.get("https://itunes.apple.com/us/rss/customerreviews/id=" + appId

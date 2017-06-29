@@ -10,6 +10,14 @@ var words = [
     'through', 'to', 'too', 'under', 'up', 'very', 'was', 'way', 'we', 'well', 'were',
     'what', 'where', 'which', 'while', 'who', 'with', 'would', 'you', 'your', 'a', 'i', "it's", "i'm"];
 
-export function isStopWord(word) {
+function isStopWord(word) {
     return words.includes(word);
+}
+
+export function tokenizeText(review) {
+    return review
+        .split(" ")
+        .map(x => x.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()\d+]/g,""))
+        .map(x => x.toLowerCase())
+        .filter(x => isStopWord(x) == false);
 }

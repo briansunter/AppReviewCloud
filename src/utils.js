@@ -4,6 +4,6 @@ export function flatMap(lambda) {
 
 export function count(arr){
     return arr.reduce(function(m,e){
-        m[e] = (+m[e]||0)+1; return m
+        m[e] = (+m[e]||0)+1; return m;
     },{});
 }

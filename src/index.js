@@ -1,13 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import WordCloud from 'react-d3-cloud';
 import { Provider } from 'react-redux';
 import { compose, createStore, applyMiddleware } from 'redux';
 import { createEpicMiddleware, combineEpics } from 'redux-observable';
 import { connect } from 'react-redux';
 import {rootEpic} from './epics';
 import {AppReviewCloud} from './ui';
-import {RESET, LOADED_APP_REVIEWS, LOAD_APP_REVIEWS, getReviews, reset, rootReducer } from './state';
+import {getReviews, reset, rootReducer } from './state';
 
 let App = ({getReviews, reviews, reset }) => (
     <div
