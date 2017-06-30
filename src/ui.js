@@ -11,12 +11,12 @@ Array.prototype.flatMap = flatMap;
 
 function wordsToD3Cloud(words) {
     return Object.entries(count(words))
-        .filter (x => x[1] > 2)
-        .map(x => ({text: x[0] + " " + x[1], value: x[1] * 1000})).slice(1,200);
+        .filter (x => x[1] > 1)
+        .map(x => ({text: x[0], value: x[1] * 1000}));
 }
 
 function tokenizeReviews(reviews){
-    let reviewWords = reviews.flatMap(x => tokenizeText(x.content.label));
+    let reviewWords = reviews.slice(1,10).flatMap(x => tokenizeText(x.content.label));
     return wordsToD3Cloud(reviewWords);
 }
 

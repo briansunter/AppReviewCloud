@@ -11,13 +11,17 @@ function fetchItunesReviewPage(appId, page) {
                      + "/sortBy=mostRecent/page="  + page + "/json");
 };
 
+function reviewsForAppId$(appId){
+    return Observable.range(1,10)
+        .flatMap(y => fetchItunesReviewPage(appId, y));
+}
+
 const reviewEpic = (action$, store) =>
-    action$.ofType(LOAD_APP_REVIEWS)
-    .flatMap(x => Observable.range(1,10).flatMap(y => fetchItunesReviewPage(x.appId, y)))
-    .take(10)
-    .flatMap(x => x.data.feed.entry)
-    .filter(x => x.content)
-    .toArray()
-    .map(x=> ({type: LOADED_APP_REVIEWS, reviews: x}));
+      action$.ofType(LOAD_APP_REVIEWS)
+      .flatMap(x => reviewsForAppId$(x.appId))
+      .flatMap(x => x.data.feed.entry)
+      .filter(x => x.content)
+      .bufferCount(300)
+      .map(x=> ({type: LOADED_APP_REVIEWS, reviews: x}));
 
 export const rootEpic = reviewEpic;

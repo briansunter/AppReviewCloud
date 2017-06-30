@@ -17,7 +17,7 @@ let App = ({getReviews, reviews, reset }) => (
 );
 
 App = connect(
-    ({reviews }) => ({reviews}),
+    ({reviews}) => ({reviews}),
     {getReviews, reset})(App);
 
 const epicMiddleware = createEpicMiddleware(rootEpic);
