@@ -7,8 +7,8 @@ import {flatMap} from './utils';
 Array.prototype.flatMap = flatMap;
 
 function fetchItunesReviewPage(appId, page) {
-    return axios.get("https://itunes.apple.com/us/rss/customerreviews/id=" + appId
-                     + "/sortBy=mostRecent/page="  + page + "/json");
+    return Observable.fromPromise(axios.get("https://itunes.apple.com/us/rss/customerreviews/id=" + appId
+                                            + "/sortBy=mostRecent/page="  + page + "/json"));
 };
 
 function reviewsForAppId$(appId){
@@ -21,7 +21,7 @@ const reviewEpic = (action$, store) =>
       .flatMap(x => reviewsForAppId$(x.appId))
       .flatMap(x => x.data.feed.entry)
       .filter(x => x.content)
-      .bufferCount(300)
+      .bufferCount(100)
       .map(x=> ({type: LOADED_APP_REVIEWS, reviews: x}));
 
 export const rootEpic = reviewEpic;

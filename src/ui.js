@@ -12,11 +12,11 @@ Array.prototype.flatMap = flatMap;
 function wordsToD3Cloud(words) {
     return Object.entries(count(words))
         .filter (x => x[1] > 1)
-        .map(x => ({text: x[0], value: x[1] * 1000}));
+        .map(x => ({text: x[0], value: x[1] * 40}));
 }
 
 function tokenizeReviews(reviews){
-    let reviewWords = reviews.slice(1,10).flatMap(x => tokenizeText(x.content.label));
+    let reviewWords = reviews.flatMap(x => tokenizeText(x.content.label));
     return wordsToD3Cloud(reviewWords);
 }
 
@@ -62,8 +62,7 @@ export class AppReviewCloud extends React.Component {
                   width={window.screen.availWidth}
                   data={this.words}
                   fontSizeMapper={fontSizeMapper}
-                  rotate={rotate}
-                  padding={2}/>
+                  rotate={rotate}/>
               </div>
             </div>
         );
