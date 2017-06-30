@@ -1,23 +1,23 @@
-var words = [
-    'about', 'after', 'all', 'also', 'am', 'an', 'and', 'another', 'any', 'are', 'as', 'at', 'be',
-    'because', 'been', 'before', 'being', 'between', 'both', 'but', 'by', 'came', 'can',
-    'come', 'could', 'did', 'do', 'each', 'for', 'from', 'get', 'got', 'has', 'had',
-    'he', 'have', 'her', 'here', 'him', 'himself', 'his', 'how', 'if', 'in', 'into',
-    'is', 'it', 'like', 'make', 'many', 'me', 'might', 'more', 'most', 'much', 'must',
-    'my', 'never', 'now', 'of', 'on', 'only', 'or', 'other', 'our', 'out', 'over',
-    'said', 'same', 'see', 'should', 'since', 'some', 'still', 'such', 'take', 'than',
-    'that', 'the', 'their', 'them', 'then', 'there', 'these', 'they', 'this', 'those',
-    'through', 'to', 'too', 'under', 'up', 'very', 'was', 'way', 'we', 'well', 'were',
-    'what', 'where', 'which', 'while', 'who', 'with', 'would', 'you', 'your', 'a', 'i', "it's", "i'm"];
+const words = [
+  'about', 'after', 'all', 'also', 'am', 'an', 'and', 'another', 'any', 'are', 'as', 'at', 'be',
+  'because', 'been', 'before', 'being', 'between', 'both', 'but', 'by', 'came', 'can',
+  'come', 'could', 'did', 'do', 'each', 'for', 'from', 'get', 'got', 'has', 'had',
+  'he', 'have', 'her', 'here', 'him', 'himself', 'his', 'how', 'if', 'in', 'into',
+  'is', 'it', 'like', 'make', 'many', 'me', 'might', 'more', 'most', 'much', 'must',
+  'my', 'never', 'now', 'of', 'on', 'only', 'or', 'other', 'our', 'out', 'over',
+  'said', 'same', 'see', 'should', 'since', 'some', 'still', 'such', 'take', 'than',
+  'that', 'the', 'their', 'them', 'then', 'there', 'these', 'they', 'this', 'those',
+  'through', 'to', 'too', 'under', 'up', 'very', 'was', 'way', 'we', 'well', 'were',
+  'what', 'where', 'which', 'while', 'who', 'with', 'would', 'you', 'your', 'a', 'i', "it's", "i'm"];
 
 function isStopWord(word) {
-    return words.includes(word);
+  return words.includes(word);
 }
 
 export function tokenizeText(review) {
-    return review
-        .split(" ")
-        .map(x => x.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()\d+]/g,""))
+  return review
+        .split(' ')
+        .map(x => x.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()\d+]/g, ''))
         .map(x => x.toLowerCase())
         .filter(x => isStopWord(x) == false);
 }

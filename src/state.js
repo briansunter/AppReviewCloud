@@ -2,28 +2,28 @@ export const RESET = 'RESET';
 export const LOADED_APP_REVIEWS = 'LOADED_APP_REVIEWS';
 export const LOAD_APP_REVIEWS = 'LOAD_APP_REVIEWS';
 
-export const getReviews = (appId) => ({ type: LOAD_APP_REVIEWS, appId: appId });
-export const reset = () => ({ type:RESET});
+export const getReviews = appId => ({ type: LOAD_APP_REVIEWS, appId });
+export const reset = () => ({ type: RESET });
 
 const defaultState = {
-    reviews: []
+  reviews: [],
 };
 
 const reviewReducer = (state = defaultState, action) => {
-    switch (action.type) {
+  switch (action.type) {
     case RESET:
-        return {reviews: []};
+      return { reviews: [] };
 
     case LOAD_APP_REVIEWS:
-        return {reviews: []};
+      return { reviews: [] };
 
     case LOADED_APP_REVIEWS:
-        let newReviews =  state.reviews.concat(action.reviews);
-        return {reviews:newReviews};
+      const newReviews = state.reviews.concat(action.reviews);
+      return { reviews: newReviews };
 
     default:
-        return state;
-    }
+      return state;
+  }
 };
 
 export const rootReducer = reviewReducer;
